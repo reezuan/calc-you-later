@@ -58,11 +58,15 @@ body {
 
 .btn {
     background-color: #FAF9F6;
-    width: 85px;
-    padding: 40px 0;
+    flex: 1 1 85px;
+    padding: 30px 0;
     border-radius: 10px;
     font-size: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.btn.top-row {
+    flex: 1 1 190px;
 }
