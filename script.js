@@ -1,6 +1,7 @@
 // Features to build:
 //
 // 1) Build in functionality for '=' button
+// 2) Separate function for updating previous display & choosing operation
 
 const calculator = createCalculator();
 
@@ -13,6 +14,7 @@ function initialiseCalculator() {
     const numberButtons = document.querySelectorAll(".number");
     const decimalButton = document.querySelector(".decimal");
     const operatorButtons = document.querySelectorAll(".operator");
+    const equalButton = document.querySelector("#equal");
 
     topRowButtons.forEach((button) => {
         button.addEventListener("click", () => {
@@ -33,7 +35,8 @@ function initialiseCalculator() {
     });
 
     deleteButton.addEventListener("click", event => {
-        currentOperationDisplay.textContent = calculator.deleteNumber();
+        calculator.deleteNumber();
+        currentOperationDisplay.textContent = calculator.currentValue;
     });
 
     numberButtons.forEach((button) => {
@@ -44,20 +47,32 @@ function initialiseCalculator() {
                 currentOperationDisplay.classList.remove("initial");
             }
             
-            currentOperationDisplay.textContent = calculator.appendNumber(event.target.id);
+            calculator.appendNumber(event.target.id);
+            currentOperationDisplay.textContent = calculator.currentValue;
         });
     });
 
     decimalButton.addEventListener("click", event => {
         if (!calculator.currentValue.includes(".")) {
-            currentOperationDisplay.textContent = calculator.appendNumber(".");
+            calculator.appendNumber(".");
+            currentOperationDisplay.textContent = calculator.currentValue;
         }
     });
 
     operatorButtons.forEach((button) => {
         button.addEventListener("click", event => {
-            lastOperationDisplay.textContent = calculator.chooseOperation(event.target.id);
+            calculator.chooseOperation(event.target.id);
+            lastOperationDisplay.textContent = calculator.updatePreviousOperation();
         });
+    });
+
+    equalButton.addEventListener("click", event => {
+        // Update the previous operation display.
+        // Change the current operation display to the final value.
+
+        lastOperationDisplay.textContent = calculator.updateFinalExpression();
+        currentOperationDisplay.textContent = calculator.evaluateExpression();
+        calculator.resetValues(calculator.evaluateExpression().toString());
     });
 }
 
@@ -76,19 +91,15 @@ function createCalculator() {
             } else {
                 currValue += number;
             }
-            
             this.currentValue = currValue;
-            return currValue;
         },
         deleteNumber: function() {
             if (currValue == "0" || currValue.length == 1) {
                 currValue = "0";
                 this.currentValue = currValue;
-                return currValue;
             } else if (currValue.length > 1) {
                 currValue = currValue.slice(0, currValue.length - 1);
                 this.currentValue = currValue;
-                return currValue;
             }
         },
         chooseOperation: function(operator) {
@@ -96,7 +107,7 @@ function createCalculator() {
                 prevValue = currValue;
                 this.previousValue = prevValue;
             } else {
-                prevValue = this.operate[operator](prevValue, currValue)
+                prevValue = this.operate[this.operation](prevValue, currValue);
                 this.previousValue = prevValue;
             }
 
@@ -105,17 +116,33 @@ function createCalculator() {
 
             op = operator;
             this.operation = op;
-
+        },
+        updatePreviousOperation: function() {
             return `${this.previousValue} ${this.operation}`;
         },
-        operate: {
-            "+": (prev, current) => {return prev + current},
-            "-": (prev, current) => {return prev - current},
-            "×": (prev, current) => {return prev * current},
-            "÷": (prev, current) => {return prev / current}
+        updateFinalExpression: function() {
+            return `${this.previousValue} ${this.operation} ${this.currentValue} =`;
         },
-        resetValues: function() {
-            currValue = "0";
+        operate: {
+            "+": (prev, current) => {return +prev + +current},
+            "-": (prev, current) => {return +prev - +current},
+            "×": (prev, current) => {return +prev * +current},
+            "÷": (prev, current) => {return +prev / +current}
+        },
+        evaluateExpression: function() {
+            switch (this.operation) {
+                case "+":
+                    return +this.previousValue + +this.currentValue;
+                case "-":
+                    return +this.previousValue - +this.currentValue;
+                case "×":
+                    return +this.previousValue * +this.currentValue;
+                case "÷":
+                    return +this.previousValue / +this.currentValue;
+            }
+        },
+        resetValues: function(current = "0") {
+            currValue = current;
             this.currentValue = currValue;
             
             prevValue = "";
@@ -127,8 +154,4 @@ function createCalculator() {
     }
 }
 
-function main() {
-    initialiseCalculator();
-}
-
-main();
+initialiseCalculator();
