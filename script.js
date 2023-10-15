@@ -1,3 +1,9 @@
+// Features to build:
+//
+// 1) Build in functionality for 'Clear' button
+// 2) Build in functionality for 'Delete' button
+// 3) Build in functionality for '=' button
+
 const calculator = createCalculator();
 
 function initialiseCalculator() {
@@ -22,8 +28,20 @@ function initialiseCalculator() {
         });
     });
 
+    clearButton.addEventListener("click", event => {
+        calculator.resetValues();
+        lastOperationDisplay.textContent = calculator.previousValue;
+        currentOperationDisplay.textContent = calculator.currentValue;
+    });
+
     numberButtons.forEach((button) => {
         button.addEventListener("click", event => {
+            if (lastOperationDisplay.classList.contains("initial")) {
+                lastOperationDisplay.textContent = calculator.previousValue;
+                lastOperationDisplay.classList.remove("initial");
+                currentOperationDisplay.classList.remove("initial");
+            }
+            
             currentOperationDisplay.textContent = calculator.appendNumber(event.target.id);
         });
     });
@@ -61,8 +79,13 @@ function createCalculator() {
             return currValue;
         },
         chooseOperation: function(operator) {
-            prevValue = currValue;
-            this.previousValue = prevValue;
+            if (prevValue === "") {
+                prevValue = currValue;
+                this.previousValue = prevValue;
+            } else {
+                prevValue = this.operate[operator](prevValue, currValue)
+                this.previousValue = prevValue;
+            }
 
             currValue = "0";
             this.currentValue = currValue;
@@ -72,17 +95,24 @@ function createCalculator() {
 
             return `${this.previousValue} ${this.operation}`;
         },
-        operate: function() {
+        operate: {
+            "+": (prev, current) => {return prev + current},
+            "-": (prev, current) => {return prev - current},
+            "×": (prev, current) => {return prev * current},
+            "÷": (prev, current) => {return prev / current}
+        },
+        resetValues: function() {
+            currValue = "0";
+            this.currentValue = currValue;
             
-            
-            currValue = "";
             prevValue = "";
-            operation = null;
+            this.previousValue = prevValue;
+
+            op = null;
+            this.operation = op;
         }
     }
 }
-
-
 
 function main() {
     initialiseCalculator();
