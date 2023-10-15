@@ -1,8 +1,6 @@
 // Features to build:
 //
-// 1) Build in functionality for 'Clear' button
-// 2) Build in functionality for 'Delete' button
-// 3) Build in functionality for '=' button
+// 1) Build in functionality for '=' button
 
 const calculator = createCalculator();
 
@@ -32,6 +30,10 @@ function initialiseCalculator() {
         calculator.resetValues();
         lastOperationDisplay.textContent = calculator.previousValue;
         currentOperationDisplay.textContent = calculator.currentValue;
+    });
+
+    deleteButton.addEventListener("click", event => {
+        currentOperationDisplay.textContent = calculator.deleteNumber();
     });
 
     numberButtons.forEach((button) => {
@@ -77,6 +79,17 @@ function createCalculator() {
             
             this.currentValue = currValue;
             return currValue;
+        },
+        deleteNumber: function() {
+            if (currValue == "0" || currValue.length == 1) {
+                currValue = "0";
+                this.currentValue = currValue;
+                return currValue;
+            } else if (currValue.length > 1) {
+                currValue = currValue.slice(0, currValue.length - 1);
+                this.currentValue = currValue;
+                return currValue;
+            }
         },
         chooseOperation: function(operator) {
             if (prevValue === "") {
