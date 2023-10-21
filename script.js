@@ -1,82 +1,68 @@
-// Features to build:
-//
-// 1) Build in functionality for '=' button
-// 2) Separate function for updating previous display & choosing operation
-
-const calculator = createCalculator();
-
 function initialiseCalculator() {
-    const lastOperationDisplay = document.querySelector(".last-operation");
-    const currentOperationDisplay = document.querySelector(".current-operation");
-    const topRowButtons = document.querySelectorAll(".top-row");
-    const clearButton = document.querySelector(".clear-button");
-    const deleteButton = document.querySelector(".delete-button");
-    const numberButtons = document.querySelectorAll(".number");
-    const decimalButton = document.querySelector(".decimal");
-    const operatorButtons = document.querySelectorAll(".operator");
-    const equalButton = document.querySelector("#equal");
-
-    topRowButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-            if (lastOperationDisplay.classList.contains("initial")) {
-                lastOperationDisplay.textContent = calculator.previousValue;
-                lastOperationDisplay.classList.remove("initial");
-                
-                currentOperationDisplay.textContent = calculator.currentValue;
-                currentOperationDisplay.classList.remove("initial");
-            }
-        });
+    document.addEventListener("click", event => {
+        let keyPressed = event.target.getAttribute("data-key");
+        callCalculatorFunction(keyPressed);
     });
-
-    clearButton.addEventListener("click", event => {
-        calculator.resetValues();
-        lastOperationDisplay.textContent = calculator.previousValue;
-        currentOperationDisplay.textContent = calculator.currentValue;
-    });
-
-    deleteButton.addEventListener("click", event => {
-        calculator.deleteNumber();
-        currentOperationDisplay.textContent = calculator.currentValue;
-    });
-
-    numberButtons.forEach((button) => {
-        button.addEventListener("click", event => {
-            if (lastOperationDisplay.classList.contains("initial")) {
-                lastOperationDisplay.textContent = calculator.previousValue;
-                lastOperationDisplay.classList.remove("initial");
-                currentOperationDisplay.classList.remove("initial");
-            }
-            
-            calculator.appendNumber(event.target.id);
-            currentOperationDisplay.textContent = calculator.currentValue;
-        });
-    });
-
-    decimalButton.addEventListener("click", event => {
-        if (!calculator.currentValue.includes(".")) {
-            calculator.appendNumber(".");
-            currentOperationDisplay.textContent = calculator.currentValue;
+    
+    document.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            event.preventDefault();
         }
-    });
-
-    operatorButtons.forEach((button) => {
-        button.addEventListener("click", event => {
-            calculator.chooseOperation(event.target.id);
-            lastOperationDisplay.textContent = calculator.updatePreviousOperation();
-        });
-    });
-
-    equalButton.addEventListener("click", event => {
-        // Update the previous operation display.
-        // Change the current operation display to the final value.
-
-        lastOperationDisplay.textContent = calculator.updateFinalExpression();
-        currentOperationDisplay.textContent = calculator.evaluateExpression();
-        calculator.resetValues(calculator.evaluateExpression().toString());
+        
+        let keyPressed = event.key;
+        callCalculatorFunction(keyPressed);
     });
 }
 
+function callCalculatorFunction(keyPressed) {
+    const numberButtons = Array
+        .from(document.querySelectorAll(".number"))
+        .reduce((arr, item) => {
+            arr.push(item.getAttribute("data-key"));
+            return arr;
+        }, []);
+
+    const operatorButtons = Array
+        .from(document.querySelectorAll(".operator"))
+        .reduce((arr, item) => {
+            arr.push(item.getAttribute("data-key"));
+            return arr;
+        }, []);
+
+    const decimalButton = ["."];
+    const deleteButton = ["Backspace"];
+    const clearButton = ["Escape"];
+    const evaluateButtons = ["=", "Enter"];
+
+    if (numberButtons.includes(keyPressed) || decimalButton.includes(keyPressed)) {
+        calculator.appendNumber(keyPressed);
+    } else if (operatorButtons.includes(keyPressed)) {
+        switch (keyPressed) {
+            case "*":
+                calculator.chooseOperation("×");
+                break;
+            case "/":
+                calculator.chooseOperation("÷");
+                break;
+            default:
+                calculator.chooseOperation(keyPressed);
+        }
+
+        // calculator.chooseOperation(keyPressed);
+    } else if (deleteButton.includes(keyPressed)) {
+        calculator.deleteNumber();
+    } else if (clearButton.includes(keyPressed)) {
+        calculator.resetValues();
+        calculator.resetDisplay();
+    } else if (evaluateButtons.includes(keyPressed)) {
+        calculator.evaluateExpression();
+    }
+}
+
 function createCalculator() {
+    const lastOperationDisplay = document.querySelector(".last-operation");
+    const currentOperationDisplay = document.querySelector(".current-operation");
+    
     let currValue = "0";
     let prevValue = "";
     let op = null;
@@ -85,13 +71,32 @@ function createCalculator() {
         currentValue: currValue,
         previousValue: prevValue,
         operation: op,
+        clearIntroMessage: function() {
+            lastOperationDisplay.textContent = this.previousValue;
+            lastOperationDisplay.classList.remove("initial");
+                
+            currentOperationDisplay.textContent = this.currentValue;
+            currentOperationDisplay.classList.remove("initial");
+        },
         appendNumber: function(number) {
-            if (currValue === "0") {
+            if (lastOperationDisplay.classList.contains("initial")) {
+                this.clearIntroMessage();
+            }
+
+            if (number === "." && this.currentValue.includes(".")) {
+                return;
+            }
+            
+            if (currValue === "0" && number !== ".") {
                 currValue = number;
             } else {
                 currValue += number;
             }
+            
             this.currentValue = currValue;
+            currentOperationDisplay.textContent = this.currentValue;
+            console.log(`Current value is ${this.currentValue}`);
+            console.log(`Previous value is ${this.previousValue}`);
         },
         deleteNumber: function() {
             if (currValue == "0" || currValue.length == 1) {
@@ -101,13 +106,15 @@ function createCalculator() {
                 currValue = currValue.slice(0, currValue.length - 1);
                 this.currentValue = currValue;
             }
+
+            currentOperationDisplay.textContent = this.currentValue;
         },
         chooseOperation: function(operator) {
             if (prevValue === "") {
                 prevValue = currValue;
                 this.previousValue = prevValue;
             } else {
-                prevValue = this.operate[this.operation](prevValue, currValue);
+                prevValue = this.operate[this.operation](prevValue, currValue).toString();
                 this.previousValue = prevValue;
             }
 
@@ -116,11 +123,13 @@ function createCalculator() {
 
             op = operator;
             this.operation = op;
+            
+            lastOperationDisplay.textContent = this.getPreviousOperation();
         },
-        updatePreviousOperation: function() {
+        getPreviousOperation: function() {
             return `${this.previousValue} ${this.operation}`;
         },
-        updateFinalExpression: function() {
+        getFinalExpression: function() {
             return `${this.previousValue} ${this.operation} ${this.currentValue} =`;
         },
         operate: {
@@ -130,16 +139,29 @@ function createCalculator() {
             "÷": (prev, current) => {return +prev / +current}
         },
         evaluateExpression: function() {
+            if (this.previousValue === "") {
+                return;
+            }
+            
+            lastOperationDisplay.textContent = this.getFinalExpression();
+            
             switch (this.operation) {
                 case "+":
-                    return +this.previousValue + +this.currentValue;
+                    currValue = +this.previousValue + +this.currentValue;
+                    break;
                 case "-":
-                    return +this.previousValue - +this.currentValue;
+                    currValue = +this.previousValue - +this.currentValue;
+                    break;
                 case "×":
-                    return +this.previousValue * +this.currentValue;
+                    currValue = +this.previousValue * +this.currentValue;
+                    break;
                 case "÷":
-                    return +this.previousValue / +this.currentValue;
+                    currValue = +this.previousValue / +this.currentValue;
             }
+
+            this.currentValue = currValue.toString();
+            currentOperationDisplay.textContent = this.currentValue;
+            this.resetValues(this.currentValue);
         },
         resetValues: function(current = "0") {
             currValue = current;
@@ -150,8 +172,18 @@ function createCalculator() {
 
             op = null;
             this.operation = op;
+        },
+        resetDisplay: function() {
+            lastOperationDisplay.textContent = this.previousValue;
+            currentOperationDisplay.textContent = this.currentValue;
         }
     }
 }
+
+// window.onload = function() {
+//     document.querySelector(".button-grid").focus();
+// }
+
+const calculator = createCalculator();
 
 initialiseCalculator();
