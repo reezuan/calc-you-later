@@ -47,8 +47,6 @@ function callCalculatorFunction(keyPressed) {
             default:
                 calculator.chooseOperation(keyPressed);
         }
-
-        // calculator.chooseOperation(keyPressed);
     } else if (deleteButton.includes(keyPressed)) {
         calculator.deleteNumber();
     } else if (clearButton.includes(keyPressed)) {
@@ -179,10 +177,6 @@ function createCalculator() {
         }
     }
 }
-
-// window.onload = function() {
-//     document.querySelector(".button-grid").focus();
-// }
 
 const calculator = createCalculator();
 
